@@ -1,0 +1,4 @@
+api:
+  image: krkr/demo-api
+  ports:
+    - 4242

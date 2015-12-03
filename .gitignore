@@ -1,0 +1,9 @@
+creds
+ssh
+temp
+
+machines/ovh-cloud/certs/
+machines/ovh-cloud/machines/
+machines/ovh-cloud/terraform.tfstate
+machines/ovh-cloud/terraform.tfstate.backup
+

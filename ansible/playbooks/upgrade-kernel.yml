@@ -1,0 +1,22 @@
+---
+- hosts: all
+  sudo: yes
+  gather_facts: false
+  vars:
+    kernel_version: "3.16.0-53"
+
+  tasks:
+    - name: Update apt
+      apt: update_cache=yes cache_valid_time=3600
+      tags: apt-update
+
+    - name: Update kernel
+      apt: name={{ item }}
+      with_items:
+        - linux-headers-{{ kernel_version }}
+        - linux-headers-{{ kernel_version }}-generic
+        - linux-image-{{ kernel_version }}-generic
+
+    - name: Reboot machine
+      shell: reboot 0
+      tags: reboot
