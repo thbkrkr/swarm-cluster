@@ -1,11 +1,13 @@
-# Swarm on OVH Cloud
+# Swarm on [OVH Cloud] in seconds
 
 ## Prerequisites
 
 1. [Download OpenStack creds](creds)
-2. [Create and upload SSH key](ssh)
-3. Create a security group
 
 ## Create a Swarm cluster
 
-	m swarm-up
+4. Size your cluster with Terraform by editing machines
+
+5. Start the Swarm cluster creation
+
+	make swarm-up

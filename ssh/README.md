@@ -1,5 +1,9 @@
 # Put SSH keys here
 
+Generate SSH key:
+
+  ssh-keygen -t rsa -b 4096
+
 Before creating the machine you need import a public SSH key on your [OVH Cloud account](https://horizon.cloud.ovh.net/project/access_and_security/?tab=access_security_tabs__keypairs_tab).
 
 Ansible uses the private key `admin.id_rsa` to SSH the machines.
