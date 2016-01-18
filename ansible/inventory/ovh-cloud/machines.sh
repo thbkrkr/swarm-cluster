@@ -1,5 +1,6 @@
-#!/bin/bash -eu
+#!/bin/sh -eu
 #
-# Ansible dynamic inventory based on a Terraform state.
+# Ansible dynamic inventory.
 
-tf-inv.sh
+export SSH_USER=ubuntu
+tf-inv.sh "$@"

@@ -1,5 +1,8 @@
+---
+
+# Install a Swarm agent with Consul for the discovery
 docker_machine_options: '
-  --swarm --swarm-image="swarm:1.0.0"
+  --swarm --swarm-image="swarm:{{ swarm_version }}"
   --swarm-discovery="consul://{{ keystore_ip }}:8500"
   --engine-opt="cluster-store=consul://{{ keystore_ip }}:8500"
   --engine-opt="cluster-advertise=eth0:2376"
