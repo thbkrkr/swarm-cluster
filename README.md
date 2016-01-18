@@ -1,13 +1,14 @@
-# Swarm on [OVH Cloud] in seconds
+## Swarm on in seconds
 
-## Prerequisites
+### Prerequisites
 
-1. [Download OpenStack creds](creds)
+1. [Download your OpenStack creds](creds)
 
 ## Create a Swarm cluster
 
-4. Size your cluster with Terraform by editing machines
+    # Size your cluster
+    vi [swarm.tf](https://github.com/thbkrkr/swarm-up/blob/master/machines/bim/swarm.tf)
 
-5. Start the Swarm cluster creation
+    # Create the Swarm cluster
 
-	make swarm-up
+	  make swarm-up

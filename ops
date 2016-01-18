@@ -1,0 +1,43 @@
+#!/bin/bash -eu
+
+NAME="$(basename $(pwd))"
+
+update() {
+  docker pull krkr/dops
+}
+
+start() {
+  docker run --rm -ti \
+    --name $NAME \
+    -v $(pwd):/ops \
+    -v $(pwd)/bin:/root/bin \
+    -v $(pwd)/ansible/ansible.cfg:/etc/ansible/ansible.cfg \
+    --env-file=$(pwd)/creds/openrc-creds.env \
+    -e MACHINE_STORAGE_PATH=/ops/machines/ovh-cloud \
+    -e ANSIBLE_HOST_KEY_CHECKING=False \
+    -e PREFIX=bim \
+    -e TF_VAR_prefix=bim \
+    krkr/dops
+}
+
+join() {
+  local cmd="${@:-zsh}"
+  #echo docker exec -ti $NAME "$cmd"
+  docker exec -ti $NAME "$cmd"
+}
+
+isStarted() {
+  docker ps -a --filter=name=$NAME | grep "${NAME}$" | wc -l
+}
+
+main() {
+  if [ $(isStarted) -ne 1 ]; then
+    echo "[ops] Start dops..."
+    start
+  else
+    join "$@"
+  fi
+}
+
+main "$@"
+#docker exec -ti $NAME "$@"
