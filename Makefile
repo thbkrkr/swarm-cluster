@@ -1,23 +1,30 @@
-NAME = $$(basename $$(pwd))
-
-swarm-up:
-	make -C machines tf-apply
-	make -C ansible upgrade-kernel
-	make -C ansible install-keystore-machine
-	make -C compose run-keystore
-	make -C ansible install-docker-machine
-	make -C compose run-stack
-
-#########
-
 go:
-	docker run --rm -ti \
-		--name $(NAME) \
-		-v $$(pwd):/ops \
-		-e MACHINE_STORAGE_PATH=/ops/machines/ovh-cloud \
-		-e OS_API_CREDS_PATH=/ops/creds/openrc-creds.sh \
-		-e ANSIBLE_HOST_KEY_CHECKING=False \
-		krkr/dops:ovh
+	@./ops
 
-exec:
-	docker exec -ti $(NAME) zsh
+swarm-up: terraform-play docker-machine-keystores start-keystores docker-machines-all
+
+terraform-apply:
+	@echo "[terraform] Create machines..."
+	cd ${MACHINE_STORAGE_PATH} && terraform apply
+
+dm: docker-machine-keystores start-keystores docker-machine-all
+
+docker-machine-keystores:
+	@echo "[docker-machine] Install Docker..."
+	play install-docker-machine -l keystores
+
+start-keystores:
+	@echo "[compose] Start keystore..."
+	MACHINE=bim-keystore-1 \
+		compote consul up -d
+
+docker-machine-all:
+	play install-docker-machine
+
+compose-up-stack:
+	@echo "[compose] Start an example stack..."
+	compote stack up -d
+
+compose-scale-stack:
+	@echo "[compose] Scale api stack..."
+	compote stack scale demoapi=2

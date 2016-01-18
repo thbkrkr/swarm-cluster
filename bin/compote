@@ -1,0 +1,75 @@
+#!/bin/bash
+
+usage() {
+  echo '
+
+  Usage: compose [COMPOSE...] [COMMAND...]
+
+  Execute a compose command given a compose file
+
+  Parameters:
+
+    COMPOSE   Name for the project name and the compose file (file must be in compose/$COMPOSE.yml)
+    COMMAND   Docker-compose command to execute
+
+  Environment variable:
+
+    MACHINE   Specified the machine to set up the environment for the Docker client (default: the master swarm)
+  '
+}
+
+ENV=ovh-cloud
+SWARM_MASTER=$PREFIX-master-1
+
+MACHINE=${MACHINE:-$SWARM_MASTER}
+
+COMPOSE_NAME=$1
+shift
+CMD=${@:-"up -d"}
+
+# Valid parameters
+
+[[ $MACHINE == "" ]] && echo "error: env var MACHINE not defined" && exit 1
+
+if [[ $COMPOSE_NAME == "" ]]; then
+  echo "error: compose file not defined"
+  echo "compose file availables:"
+  ls -1 /ops/compose/*.yml | sed "s|/ops/compose/\(.*\).yml| - \1|"
+  exit 1
+fi
+
+COMPOSE_FILE="/ops/compose/$COMPOSE_NAME.yml"
+[ ! -f $COMPOSE_FILE ] && echo "error: File $COMPOSE_FILE not found" && exit 1
+
+[ ! -d /ops/machines/$ENV/machines/$MACHINE ] && echo "error: Machine $MACHINE not found" && exit 1
+
+set -eu
+
+# Set up the environment for the Docker client
+
+if [[ $MACHINE == "$SWARM_MASTER" ]]; then
+  #eval $(docker-machine env --shell zsh--swarm $SWARM_MASTER)
+  IP=$(docker-machine ip $SWARM_MASTER)
+  export DOCKER_TLS_VERIFY="1"
+  export DOCKER_HOST="tcp://$IP:2376"
+  export DOCKER_CERT_PATH="/ops/machines/$ENV/machines/$MACHINE"
+  export DOCKER_MACHINE_NAME="$MACHINE"
+else
+  #eval $(docker-machine env --shell zsh $MACHINE)
+  IP=$(docker-machine ip $MACHINE)
+  export DOCKER_TLS_VERIFY="1"
+  export DOCKER_HOST="tcp://$IP:2376"
+  export DOCKER_CERT_PATH="/ops/machines/$ENV/machines/$MACHINE"
+  export DOCKER_MACHINE_NAME="$MACHINE"
+fi
+
+# Create and start containers
+echo '{
+  "date":"'$(date +%s)'",
+  "level":"info",
+  "kind":"docker-compose",
+  "cmd":"docker-compose -p '$COMPOSE_NAME' -f '$COMPOSE_FILE' '$CMD'",
+  "host":"'$MACHINE'"
+}'
+
+docker-compose -p $COMPOSE_NAME -f $COMPOSE_FILE $CMD
