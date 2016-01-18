@@ -1,4 +1,7 @@
-api:
+demoapi:
   image: krkr/demo-api
   ports:
     - 4242
+  restart: always
+  # environment:
+  #   - "affinity:container==!demoapi"

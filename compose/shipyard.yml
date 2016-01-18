@@ -1,0 +1,61 @@
+rethinkdb:
+  image: shipyard/rethinkdb
+  container_name: shipyard-rethinkdb
+  volumes:
+    - ./rethinkdb-data:/data
+  expose:
+    - 29015
+    - 28015
+    - 8080
+  restart: always
+
+# shipyard:
+#   image: shipyard/shipyard
+#   container_name: shipyard
+#   ports:
+#     - 81:8080
+#   links:
+#     - rethinkdb:rethink
+#   restart: always
+#   environment:
+#     - "affinity:container==rethinkdb"
+#   command: -rethinkdb-addr="rethink:28015"
+
+# proxy:
+#   image: shipyard/docker-proxy
+#   hostname: $HOSTNAME
+#   volumes:
+#     - /var/run/docker.sock:/var/run/docker.sock
+#   ports:
+#     - 2375:2375
+#   environment:
+#     - PORT=2375
+#   restart: always
+
+# swarmagentmaster:
+#   image: swarm:1.0.0
+#   container_name: swarm-agent-master
+#   volumes:
+#     - /etc/docker:/etc/docker
+#   ports:
+#     - 3376
+#   command: manage --tlsverify --tlscacert=/etc/docker/ca.pem --tlscert=/etc/docker/server.pem --tlskey=/etc/docker/server-key.pem -H tcp://0.0.0.0:3376 --strategy spread --advertise 149.202.177.119:3376 consul://149.202.176.89:8500
+
+# swarmagent:
+#   image: swarm:1.0.0
+#   container_name: swarm-agent
+#   command: join --advertise 149.202.177.119:2376 consul://149.202.176.89:8500
+
+controller:
+  image: shipyard/shipyard
+  volumes:
+    - /etc/docker:/etc/docker:ro
+  ports:
+    - 8081:8080
+  links:
+    - rethinkdb:rethinkdb
+  restart: always
+  environment:
+    - "affinity:container==shipyard-rethinkdb"
+#    - "affinity:container==swarm-agent-master"
+  command: server -d tcp://172.17.0.1:3376 --tls-ca-cert=/etc/docker/ca.pem --tls-cert=/etc/docker/server.pem --tls-key=/etc/docker/server-key.pem

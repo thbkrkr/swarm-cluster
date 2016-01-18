@@ -1,0 +1,9 @@
+docker run -ti -d --restart=always -p 8081:8080 \
+    --name shipyard-controller \
+    --link shipyard-rethinkdb:rethinkdb \
+    -e DOCKER_TLS_VERIFY="1" \
+    -e DOCKER_HOST="tcp://149.202.179.19:3376" \
+    -e DOCKER_MACHINE_NAME="bim-master-1" \
+    -e DOCKER_CERT_PATH=/opt/cert \
+    -v /home/ubuntu/swarm-up/machines/ovh-cloud/machines/bim-master-1:/opt/cert:ro \
+    shipyard/shipyard:latest server -d tcp://149.202.179.19:3376

@@ -1,0 +1,4 @@
+ps:
+  image: krkr/curl
+  volumes:
+    - "/var/run/docker.sock:/var/run/docker.sock"
