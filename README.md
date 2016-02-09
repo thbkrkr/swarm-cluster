@@ -1,14 +1,13 @@
-## Swarm on in seconds
+## A Swarm cluster in seconds
 
-### Prerequisites
+  * Get [OpenStack creds](machines/creds/README.md)
+  * Create [SSH keys](machines/ssh/README.md)
+  * Size your [cluster](https://github.com/thbkrkr/swarm-up/blob/master/machines/bim/swarm.tf)
 
-1. [Download your OpenStack creds](creds)
+Run [`m swarm-up`](https://github.com/thbkrkr/swarm-cluster/blob/master/Makefile#L6) from [dops](https://github.com/thbkrkr/dops).
 
-## Create a Swarm cluster
+    > make go
+    [ops] Start bim-ops local...
 
-    # Size your cluster
-    vi [swarm.tf](https://github.com/thbkrkr/swarm-up/blob/master/machines/bim/swarm.tf)
-
-    # Create the Swarm cluster
-
-	  make swarm-up
+    /ops master  [cluster:bim]  root@io-ops [indocker]
+    > m swarm-up

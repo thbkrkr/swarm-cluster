@@ -1,0 +1,17 @@
+---
+  - name: Update apt
+    sudo: yes
+    apt: update_cache=yes cache_valid_time=3600
+    tags: apt-update
+
+  - name: Update kernel
+    sudo: yes
+    apt: name={{ item }}
+    with_items:
+      - linux-headers-{{ kernel_version }}
+      - linux-headers-{{ kernel_version }}-generic
+      - linux-image-{{ kernel_version }}-generic
+
+  - name: Reboot machine
+    shell: reboot 0
+    tags: reboot

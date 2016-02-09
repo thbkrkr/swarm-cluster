@@ -1,0 +1,23 @@
+---
+
+# https://github.com/docker/swarm/releases
+#swarm_version: 1.1.0-rc1
+swarm_version: 1.0.0
+
+# Keystore IP for Swarm discovery (https://docs.docker.com/swarm/discovery/)
+keystore_ip: "{{ hostvars[groups['keystores'][0]]['ansible_ssh_host'] }}"
+
+docker_machine_options:
+  keystores: ''
+  masters: '
+  --swarm --swarm-image="swarm:{{ swarm_version }}" --swarm-master
+  --swarm-discovery="consul://{{ keystore_ip }}:8500"
+  --engine-opt="cluster-store=consul://{{ keystore_ip }}:8500"
+  --engine-opt="cluster-advertise=eth0:2376"
+  '
+  nodes: '
+  --swarm --swarm-image="swarm:{{ swarm_version }}"
+  --swarm-discovery="consul://{{ keystore_ip }}:8500"
+  --engine-opt="cluster-store=consul://{{ keystore_ip }}:8500"
+  --engine-opt="cluster-advertise=eth0:2376"
+  '

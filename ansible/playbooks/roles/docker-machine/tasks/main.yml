@@ -1,0 +1,19 @@
+---
+  - name: Check docker-machine existence
+    sudo: false
+    local_action:
+      shell docker-machine ip {{ inventory_hostname }}
+    register: dm_present
+    failed_when: "'Host does not exist' in dm_present.stderr"
+    ignore_errors: yes
+
+  - name: Install docker-machine
+    sudo: false
+    local_action:
+      shell docker-machine create -d generic
+        --generic-ssh-user ubuntu
+        --generic-ssh-key  {{ ansible_ssh_private_key_file }}
+        --generic-ip-address {{ ansible_ssh_host }}
+        {{ docker_machine_options[group_names[0]] }}
+          {{ inventory_hostname }}
+    when: dm_present|failed

@@ -1,0 +1,59 @@
+#!/bin/bash
+
+usage() {
+  echo '
+
+  Usage: compoze [COMPOSE...] [COMMAND...]
+
+  Execute a compose command given a compose file communicating a docker daemon (swarm master by default).
+
+  Parameters:
+
+    COMPOSE   Name for the project name and the compose file (file must be in /ops/compose/$COMPOSE.yml)
+    COMMAND   Docker-compose command to execute (default: up -d)
+
+  Environment variable:
+
+    MACHINE   Specified the machine to set up the environment for the Docker client (default: the master swarm)
+  '
+}
+
+COMPOSE_NAME=$1 && shift
+CMD=${@:-"up -d"}
+COMPOSE_FILE="/ops/compose/$COMPOSE_NAME.yml"
+
+# Valid parameters
+
+if [[ $COMPOSE_NAME == "" ]] || [ ! -f $COMPOSE_FILE ]; then
+  echo "error: unknown compose file"
+  echo "  compose file availables:"
+  ls -1 /ops/compose/*.yml | sed "s|/ops/compose/\(.*\).yml|    - \1|"
+  exit 1
+fi
+
+source denv
+
+echo "o" > output
+>> .output
+docker-compose -p $COMPOSE_NAME -f $COMPOSE_FILE $CMD &> .output
+status=$?
+
+case $status in
+  0) level=info ;;
+  *) level=error ;;
+esac
+
+get::output() {
+  cat .output | tail -1 | strings
+}
+
+echo ''
+echo '{
+  "date":"'$(date +%s)'",
+  "level":"'$level'",
+  "kind":"docker-compose",
+  "cmd":"docker-compose -p '$COMPOSE_NAME' -f '$COMPOSE_FILE' '$CMD'",
+  "host":"'$MACHINE'",
+  "status":'$status',
+  "output":"'"$(get::output)"'"
+}'

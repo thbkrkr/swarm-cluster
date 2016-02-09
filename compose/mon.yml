@@ -1,5 +1,5 @@
 agent:
-  image: google/cadvisor
+  image: google/cadvisor:latest
   volumes:
     - /:/rootfs:ro
     - /var/run:/var/run:rw

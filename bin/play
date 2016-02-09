@@ -1,32 +1,37 @@
 #!/bin/bash
 
-ENV=$(basename $MACHINE_STORAGE_PATH)
 INVENTORY=/ops/ansible/inventory/$ENV
 
 PLAYBOOK=${1:-""}
 shift
 OPTIONS=$@
+PLAYBOOK_FILE="/ops/ansible/playbooks/$PLAYBOOK.yml"
 
 # Valid parameters
-
-if [[ $PLAYBOOK == "" ]]; then
+if [[ $PLAYBOOK == "" ]] || [ ! -f $PLAYBOOK_FILE ]; then
   echo "error: playbook not defined"
   echo "playbooks availables:"
   ls -1 /ops/ansible/playbooks/*.yml | sed "s|/ops/ansible/playbooks/\(.*\).yml| - \1|"
   exit 1
 fi
 
-PLAYBOOK_FILE="/ops/ansible/playbooks/$PLAYBOOK.yml"
-[ ! -f $PLAYBOOK_FILE ] && echo "error: File $PLAYBOOK_FILE not found" && exit 1
+now=$(date +%s)
+event='"time":'$now',"type":"exec","cmd": "''"'
+sha1=$(sha1sum <<< $event | cut -c-12)
 
-set -eu
+ansible-playbook -i $INVENTORY $PLAYBOOK_FILE $OPTIONS
+status=$?
+#&> .output
+
+# get::output() {
+#   cat .output | egrep "(^\{)" | jq -s . | jq -c . | strings
+# }
 
 echo '{
   "date":"'$(date +%s)'",
   "level":"info",
   "kind":"ansible",
-  "cmd":"'ansible-playbook -i $INVENTORY $PLAYBOOK_FILE -l $OPTIONS'",
-  "host":"all"
+  "cmd":"ansible-playbook -i '$INVENTORY' '$PLAYBOOK_FILE' -l '$OPTIONS'",
+  "host":"all",
+  "status":'$status'
 }'
-
-ansible-playbook -i $INVENTORY $PLAYBOOK_FILE $OPTIONS

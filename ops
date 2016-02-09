@@ -1,28 +1,41 @@
-#!/bin/bash -eu
+#!/bin/bash -u
 
-NAME="$(basename $(pwd))"
+ENV=bim
+NAME=$ENV-ops
+
+BULWARK=$ENV-keystore-1
+
+DOPS=krkr/dops
 
 update() {
-  docker pull krkr/dops
+  docker pull $DOPS
 }
 
-start() {
+local_start() {
   docker run --rm -ti \
-    --name $NAME \
+    --hostname "$(hostname)-ops" \
+    --name "local-$NAME" \
     -v $(pwd):/ops \
     -v $(pwd)/bin:/root/bin \
     -v $(pwd)/ansible/ansible.cfg:/etc/ansible/ansible.cfg \
-    --env-file=$(pwd)/creds/openrc-creds.env \
-    -e MACHINE_STORAGE_PATH=/ops/machines/ovh-cloud \
+    --env-file=$(pwd)/machines/creds/$ENV-os-creds.env \
+    -e MACHINE_STORAGE_PATH=/ops/machines/$ENV \
     -e ANSIBLE_HOST_KEY_CHECKING=False \
-    -e PREFIX=bim \
-    -e TF_VAR_prefix=bim \
-    krkr/dops
+    -e MACHINE=$ENV-node-1 \
+    -e ENV=$ENV \
+    $DOPS
 }
 
-join() {
+start() {
+  docker run -d \
+    --hostname bulwark-$BULWARK-ops \
+    --name "bulwark-$NAME" \
+    --env-file=/ops/machines/creds/$ENV-os-creds.env \
+    krkr/$NAME
+}
+
+dexec() {
   local cmd="${@:-zsh}"
-  #echo docker exec -ti $NAME "$cmd"
   docker exec -ti $NAME "$cmd"
 }
 
@@ -31,13 +44,70 @@ isStarted() {
 }
 
 main() {
-  if [ $(isStarted) -ne 1 ]; then
-    echo "[ops] Start dops..."
-    start
+  local cmd="$@"
+
+  if [[ -f /.dockerinit ]]; then
+    echo "[ops] Config env for $BULWARK..."
+    DNAME=bulwark-$NAME
+    MACHINE=$BULWARK source _denv.sh
   else
-    join "$@"
+    DNAME=local-$NAME
+    sudo chown -R $USER:$USER .
   fi
+
+  case $cmd in
+    "build")
+      echo "[ops] Build $ENV-dops..."
+      docker build -t krkr/$NAME --build-arg ENV=$ENV .
+      exit 0
+      ;;
+  esac
+
+  # Start
+  if [ $(isStarted) -ne 1 ]; then
+    if [[ -f /.dockerinit ]]; then
+      echo "[ops] Start $NAME in docker..."
+      start
+    else
+      echo "[ops] Start $NAME local..."
+      DNAME=local-$NAME
+      local_start
+    fi
+    exit 0
+  fi
+
+  if [[ "$cmd" == "" ]]; then
+    echo "[ops] Join existing $NAME local..."
+    docker exec -ti $DNAME start zsh
+  else
+    now=$(date +%s)
+    event='"time":'$now',"type":"exec","cmd": "'$@'"'
+    sha1=$(sha1sum <<< $event | cut -c-12)
+
+    # Execution
+    docker exec -ti $NAME "$@" #&> .output.ops
+
+    duration=$(expr $(date +%s) - $now)
+
+    case $? in
+      0) level=info ;;
+      *) level=error ;;
+    esac
+  fi
+
+  get::output() {
+    cat .output.ops | jq .
+  }
+
+  echo '{
+    "id":"'$sha1'",
+    "date":"'$now'",
+    "level":"'$level'",
+    "kind":"ops",
+    "cmd":"'$@'",
+    "duration":"'$duration'"
+  }'
+    #"output":"'$(get::output)'",
 }
 
 main "$@"
-#docker exec -ti $NAME "$@"
